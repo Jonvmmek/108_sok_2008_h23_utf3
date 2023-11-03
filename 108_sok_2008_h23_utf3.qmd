@@ -1,0 +1,365 @@
+---
+title: "SOK-2008 Utfordring 3"
+author: "108"
+format: pdf
+editor: visual
+---
+
+```{r, warning=FALSE}
+
+rm(list=ls())
+#| echo: false
+library(tidyverse)
+library(rjstat)
+library(httr)
+```
+
+### 3.1.1
+
+*Tone har nytte av sammensatt konsum og fritid. Gå ut ifra at Tone sin nytte kan beskrives ved bruk av Cobb-Douglas funksjonen.*
+
+```{r}
+l_1 <- seq(0, 60, by = .01) 
+
+df <- data.frame(l_1)
+```
+
+```{r, warning=FALSE}
+
+axes_1 <- ggplot(df, aes(l_1))+
+  labs(x="Fritid", y="Konsum i 10-tall") +
+  theme(axis.title = element_text(size = 10),
+        plot.title = element_text(size = 10),
+        panel.background = element_blank(), # hvit bakgrunn
+        axis.line = element_line(colour = "black"), # sett inn akselinjer
+        axis.title.x = element_text(hjust = 1),
+        axis.title.y = element_text(angle = 0, vjust = 1, hjust=1))+ # juster labels på aksene  
+  coord_fixed(ratio = 1)+ # lik skala for x og y aksen
+  scale_x_continuous(limits = c(0, 70), expand = c(0, 0))+
+  scale_y_continuous(limits = c(0, 1000), expand = c(0, 0))+ # begrense aksene
+  coord_fixed(ratio = (70 - 0) / (1000 - 0))
+```
+
+```{r}
+#U = C^0.5 * L^0.5 = 100^0.5 60^0.5
+
+I0 <- sum(100^0.5 * 60^0.5)
+
+I1 <- sum(200^0.5 * 60^0.5)
+
+I2 <- sum(180^0.5 * 60^0.5)
+
+df_1 <- data.frame(I0, I1, I2)
+
+print(df_1$I0)
+print(df_1$I1)
+```
+
+Først regnes nytteverdien ut, tallene trenger vi senere for å sette opp indifferenskurvene.
+
+Tallet representerer alle mulige kombinasjoner av nytte og fritid og bestemmer hvor på grafen de buete linjene går.
+
+```{r}
+
+#100*60 = 6000
+#6000/20 = 300
+#300 - 100 = 200
+#200/40 = wr
+
+df_1$wr_0 <- 200/40 # = 5
+
+#200*60 = 12000
+#12000/20 
+#600 - 100 = 500
+#500/40 = wr
+
+df_1$wr_1 <- 500/40 # = 12.5
+```
+
+Når vi ganger 100 eller 200 med 60 finner vi verdien Tone får ukentlig ved de forskjellige nivåene av stønad. Dette deler vi på 20 som er de resterende antall timene med fritid Tone har til rådighet.
+
+Tallet vi har på dette tidspunktet beskriver Tones optimale konsum per time fri hun har. Vi trekker derfra fra 100 fra dette tallet som vi deretter deler på 40, som er antall timer i uken Tone jobber for å komme fram til Wr, eller reservasjonslønnen.
+
+Tallet vi har regnet ut representerer det lønnen må øke med for at nytten for å jobbe skal være **≥** nytten Tone får når hun mottar stønad.
+
+```{r}
+df_1$rv_1 <- sum(5)
+df_1$rv_2 <- sum(12.5)
+```
+
+```{r}
+df_1$rv_1
+```
+
+105 kr er reservasjonslønnen vi må ha dersom Tone i tillegg får stønad på 100kr.
+
+```{r}
+df_1$rv_2
+```
+
+112.5 kr er reservasjonslønnen vi må ha dersom det skal gi mening for Tone å ha en jobb i stedet for å motta stønad.
+
+```{r}
+# vi angir noen indifferenskurver
+I_0 <- function(l_1) (df_1$I0^2)/(l_1)  # bytter ut U0 mot et relevant nivå på nytten
+I_1 <- function(l_1) (df_1$I1^2)/(l_1) # bytter ut U1 mot et relevant nivå på nytten
+
+I_2 <- function(l_1) (df_1$I2^2)/(l_1) # bytter ut U2 mot et relevant nivå på nytten
+
+# Reservasjonslønn uten stønad
+wr0 <- function(l_1) {
+  return(100 + 12.5 * (60 - l_1))
+}
+
+# Reservasjonslønn med stønad
+wr1 <- function(l_1) {
+  return(100 + 5 * (60 - l_1))
+}
+```
+
+```{r, warning=FALSE}
+
+figur_2 <- axes_1+
+  stat_function(df,
+                fun=I_0,
+                mapping = aes() 
+  )+
+  stat_function(df,
+                fun=I_1,
+                mapping = aes() 
+  )+
+  annotate("text",
+           x=8, 
+           y=600, 
+           label=expression(u[0]))+ 
+  annotate("text",
+           x=15,
+           y=700,
+           label=expression(u[1]))+  #Navn indifferansekurve 1
+  geom_segment(aes(x = 0, y = wr0(0), xend = 60, yend = wr1(60)), color="steelblue") + #Kurve som beskriver reservasjonslønn da stønad == 0
+  geom_segment(aes(x = 0, y = wr1(0), xend = 60, yend = wr1(60)), color="blue") + #Kurve som beskriver reservasjonslønn da stønad == 100
+  geom_segment(aes(x=60, y=0, xend=60, yend=200))+
+    geom_segment(aes(x=20, y=0, xend=20, yend=600))+
+  geom_segment(aes(x=0, y=100, xend=60, yend=100), linetype="dashed")+
+  geom_segment(aes(x=0, y=200, xend=60, yend=200), linetype="dashed", color="red")+
+  annotate("text",x=18,y=280, 
+           label=expression(h1),size=2.6) +
+    annotate("text",x=18,y=585, 
+           label=expression(h2),size=2.6)
+
+figur_2
+```
+
+I denne grafen har vi plottet 2 indifferenskurver markert med U0 og U1 som viser nyttenivået til de to ulike reservasjons-lønnene.
+
+De blå budsjettlinjene beskriver mulighetsområdet basert på den utregnede reservasjonslønnen.
+
+De 2 stiplete linjene viser trygdenivå når Tone ikke jobber, disse øker ikke da de ikke er affektert av x-axen.
+
+Det er plassert en linje på 20 på x-axen som forteller oss konsumnivået til Tone om hun jobber 40 timer, og derfor har 20 timer ekstra fritid til rådighet. Langs denne linja finner vi punkter hvor den krysser de to budsjettlinjene, disse punktene beskriver Tones mulighetsområde og den optimale tilpasning for konsum når hun jobber 40 timer.
+
+Årsaken til at differansen i inntekten vist i reservasjonslønnen blir større når Tone må gi opp all stønad og tjene penger uten arbeidsfri inntekt ser vi i utregningen. Når hun må gi opp 100 kroner i stønad må den ekstra lønnen hun vil motta må være desto større for at det skal være verd å bytte vekk fritiden hun mister.
+
+om vi ganger wr0 med 2.5 får vi det samme som wr1, det viser at Tones reservasjonslønn må øke med 2.5 ganger mer en wr0 for at det skal være verdt Tone sin tid dersom hun skal forsake stønaden.
+
+```{r}
+5*2.5
+```
+
+### *3.1.2*
+
+*Arbeidsmarkedet er sjelden perfekt. Forklar hvilke effekter trygd har på arbeidsmarkedet da arbeidsmarkedet er ufullkomment.*
+
+Det er 3 hoved effekter man blir presentert med når man introduserer trygd inn i et ufullkomment arbeidsmarked, de er jobbsøke-effekten, lønnseffekten og rettighetseffekter. Nedenfor vil jeg gå gjennom betydningen av disse effektene.
+
+Jobbsøkeeffekten
+
+Arbeidere får et hvis nivå stønad basert på sin tidligere lønn, dette kan for mange være et komfortabelt nivå som gjør resulterer i at hasten for å skaffe seg jobb da de med stønad etter å ha mistet jobben ikke er like stor som den trolig ville ha vært dersom man ikke hadde mottatt stønad.
+
+Mangel på hastverk gjør at arbeidssøkere kan bruke mer tid på å finne en mer passende jobb basert på både interesse og lønnsnivå.
+
+Lønnseffekten
+
+I likhet med jobbsøker-effekten vil lønnseffekten gi arbeidssøkere mindre hastverk med å finne en ny jobb. Stønad virker som et sikkerhetsnett som gjør at hastverket med å finne en ny jobb blir mindre, arbeidssøkere kan derfor bruke mer tid på å finne ny jobb som tilfredsstiller lønnsnivået de er ute etter.
+
+Med stønad i et ufullkomment jobbmarked vil risikoen assosiert med å være uten jobb minkes, da inntekten til arbeidere ikke forsvinner, men minker med et hvis nivå.
+
+Rettighetseffekter
+
+Arbeidstakeren kjøper seg inn i trygdeordningen ved å jobbe å betale skatt,
+
+Arbeidssøkeren som mottar stønad må holde seg aktiv som jobbsøker for å opprettholde rettigheten til å fortsette å motta stønad, men trenger ikke faktisk være den personen som blir innvilget noen av disse søknadene.
+
+Hær er det forskjell på unge og gamle/eldre søkere, da de elder søkerne får stort sett har høyere nytte fra stønadene da den akkumulerte arbeidstiden og høyere lønnsnivå er på et høyere nivå enn de fleste yngre arbeidssøkere. Det betyr at jo lengere en arbeidssøker har vært i arbeidsmarkedet jo mer rom har den for å være kravstor ovenfor lønnsnivå i sin neste jobb.
+
+### *3.2*
+
+#### a)
+
+```{r}
+#| echo: false
+
+url <- "https://data.ssb.no/api/v0/no/table/12441/"
+
+query <- '{
+  "query": [
+    {
+      "code": "Kjonn",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "0"
+        ]
+      }
+    },
+    {
+      "code": "NACE2007",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "10-33"
+        ]
+      }
+    },
+    {
+      "code": "Sykefraver2",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "E"
+        ]
+      }
+    },
+    {
+      "code": "Tid",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "2001",
+          "2002",
+          "2003",
+          "2004",
+          "2005",
+          "2006",
+          "2007",
+          "2008",
+          "2009",
+          "2010",
+          "2011",
+          "2012",
+          "2013",
+          "2014",
+          "2015",
+          "2016",
+          "2017",
+          "2018",
+          "2019",
+          "2020",
+          "2021",
+          "2022"
+        ]
+      }
+    }
+  ],
+  "response": {
+    "format": "json-stat2"
+  }
+}'
+
+hent_indeks.tmp <- url %>%
+  POST(body = query, encode = "json")
+
+sykefraver <-  hent_indeks.tmp %>%
+  content("text") %>%
+  fromJSONstat() %>%
+  as_tibble()
+```
+
+```{r}
+sykefraver$år <- as.numeric(as.character(sykefraver$år))
+```
+
+```{r}
+ggplot() + 
+  geom_line(data=sykefraver, aes(x=år, y=value), color='blue') +
+  geom_smooth() +
+       labs(x = 'År',
+       y = 'Sykefraværsprosent',
+       title = '',
+       subtitle = 'Bruk av egenmelding i idustri') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+Bruk av egenmeldinger presenteres i denne grafen, næringen som er valgt ut for å vise utviklingen er industri. Vi har data fra 2001 til og med 2022 på x-axen, og sykefraværsprosent på y-axen
+
+Siden låta Tredageren ble sluppet kan vi observere en gradvis økning i bruken av egenmelding de siste 20 årene. Økningen er dog ikke like dramatisk som det visuelt kan virke som i grafen, da differansen mellom starten og slutten i realiteten bare er på 0.6 %.
+
+I teksten Tredagers av Gatas Parlament får man inntrykket av at bruket av egenmelding brukes til den grad at den misbrukes. Denne personen skulle gjerne hatt mindre arbeidstid med samme konsum.
+
+Hans valg påvirkes av en i sitt nærvær som i en mindre grad verdsetter konsum en hans selv, da dagene deres brukes på andre fritidsaktiviteter framfor å gå på jobb.
+
+#### b)
+
+```{r, warning=FALSE}
+
+figur_3 <- axes_1+
+  stat_function(df,
+                fun=I_0,mapping = aes() )+
+  stat_function(df,
+                fun=I_2, mapping = aes()  )+
+  annotate("text", x=8, y=600,label=expression(''[]))+ 
+  annotate("text", x=13, y=700,label=expression(''[]))+
+  geom_segment(aes(x = 0, y = wr1(0), xend = 60, yend = wr1(60)), color="blue") +
+  geom_segment(aes(x=36, y=0, xend=36, yend=300))+
+    geom_segment(aes(x=20, y=0, xend=20, yend=300))+
+    geom_segment(aes(x=20, y=300, xend=36, yend=300),colour='green')+
+  geom_segment(aes(x=0, y=100, xend=60, yend=100), linetype="dashed")+
+  annotate("text",x=18,y=20, label=expression(jt1),size=2.6) +
+    annotate("text",x=34,y=20,label=expression(jt2),size=2.6)
+
+figur_3
+```
+
+Om vi antar at han bruker alle 3 egenmeldingene sine ender vi opp med en arbeidsuke som er betraktelig kortere, egenmeldingen gjør at han ikke mister konsum som gjør at han har like mye konsum for mindre arbeidstid. jt1 markerer tid på jobb før bruk av egenmelding, jt2 markerer tid på jobb etter bruk av egenmelding.
+
+Disintensivproblemet i denne konteksten blir hans bruk av sykedager, dette er tredageren som det blir referert til i teksten. Egenmelding kan brukes opp til 3 dager etter hverandre opp til et hvis antall dager i løpet av året, og skal brukes for å restituere fra sykdom.
+
+Personen i teksten har skjønt at det ikke er konsekvensen av å ta alle de tillatte dagene tilgjengelig selv om han kanskje ikke har behov for å ta ut alle dagene eller er like syk som noen av sine kolleger som også tar bruk av denne ordningen.
+
+Maks bruk av sykedager virker til å resultere i at de som er sykedagsmissbrukere litt syke tar like mange sykedager som de som er betraktelig sykere, men ikke syk til den grad at blir sykemeldt.
+
+c\)
+
+Et virkemiddel for å minke misbruk av sykedagsordningen kan være å innføre mindre lønn i de dagene arbeiderne er borte fra jobb. Dette kan i tillegg gå prosentvis over tid, og kan evalueres om bruken av egenmelding er hyppig hos enkelt individer.
+
+Dette vil i praksis bety at det tilgjengelige konsumet for de som bruker egenmelding for å få ekstra fritid vil gå nedover som gjør fritiden mindre verdifull. Dette vil hjelpe på å avskrekke sykedagsmissbrukere fra å ta de dagene de i utgangspunktet ikke nødvendigvis ville hatt behov for.
+
+```{r}
+wr2 <- function(l_1) {
+  return(40 + 5 * (60 - l_1))
+}
+```
+
+```{r, warning=FALSE}
+
+figur_4 <- axes_1+
+  annotate("text", x=8, y=600,label=expression(''[]))+ 
+  annotate("text", x=13, y=700,label=expression(''[]))+
+  geom_segment(aes(x = 0, y = wr1(0), xend = 60, yend = wr1(60)), color="blue") +
+    geom_segment(aes(x = 0, y = wr1(0), xend = 60, yend = wr2(60)), color="purple") +
+  geom_segment(aes(x=36, y=0, xend=36, yend=300))+
+    geom_segment(aes(x=20, y=0, xend=20, yend=300))+
+    geom_segment(aes(x=20, y=300, xend=36, yend=300),colour='green')+
+  geom_segment(aes(x=0, y=100, xend=60, yend=100), linetype="dashed") +
+    annotate("text",x=18,y=20, label=expression(jt1),size=2.6) +
+    annotate("text",x=34,y=20,label=expression(jt2),size=2.6)
+
+figur_4
+```
+
+Blå Linje representerer lønn før prosentvist kutt i lønnsdekning, lilla representerer etter kutt i prosentvis lønnsdekning.
+
+### Appendiks/erklæring om bruk av AI.
+
+I denne oppgaven er det ikke brukt noen som helst form av AI(kunstig intelligens) for å løse oppgavene.
